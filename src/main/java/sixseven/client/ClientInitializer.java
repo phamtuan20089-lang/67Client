@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
@@ -42,6 +43,7 @@ public class ClientInitializer implements ClientModInitializer {
   public static SpotifyBridge spotifyBridge;
   public static SoundSettings soundSettings;
   public static EmoteCatalog emoteCatalog;
+  public static volatile boolean openGuiPending;
   public static boolean enabled;
   public static boolean enabled2;
   public static String[] stringArray;
@@ -80,8 +82,22 @@ public class ClientInitializer implements ClientModInitializer {
 
   @Override
   public void onInitializeClient() {
-    System.out.println("AnalFuckingAiAuth");
-    System.out.println("AnalFuckedAiAuthSuccessfully!");
+    ClientSendMessageEvents.ALLOW_CHAT.register(
+        message -> {
+          String text = message.trim();
+          if (text.equalsIgnoreCase(".gui") || text.equalsIgnoreCase(".menu")) {
+            openGuiPending = true;
+            return false;
+          }
+          return true;
+        });
+    ClientTickEvents.END_CLIENT_TICK.register(
+        client -> {
+          if (openGuiPending) {
+            openGuiPending = false;
+            client.setScreen(ScreenSupport4.getScreen(null));
+          }
+        });
     LookupSupport10.update();
 
     logger.info("{} {} initializing", "67Client", "2.0.3");
