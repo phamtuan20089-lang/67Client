@@ -1,5 +1,7 @@
 package sixseven.client.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
@@ -10,7 +12,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import sixseven.client.ClientInitializer;
 import sixseven.client.module.FakeStatsModule;
@@ -30,7 +31,7 @@ public class InGameHudMixin4 {
     }
   }
 
-  @Redirect(
+  @WrapOperation(
       method =
           "renderScoreboardSidebar(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/scoreboard/ScoreboardObjective;)V",
       at =
@@ -39,13 +40,14 @@ public class InGameHudMixin4 {
               target =
                   "Lnet/minecraft/client/font/TextRenderer;getWidth(Lnet/minecraft/text/StringVisitable;)I",
               ordinal = 0))
-  public int computeInt(TextRenderer textRenderer, StringVisitable stringVisitable) {
+  public int computeInt(
+      TextRenderer textRenderer, StringVisitable stringVisitable, Operation<Integer> original) {
     return stringVisitable instanceof Text text
-        ? textRenderer.getWidth(getText3(text))
-        : textRenderer.getWidth(stringVisitable);
+        ? original.call(textRenderer, getText3(text))
+        : original.call(textRenderer, stringVisitable);
   }
 
-  @Redirect(
+  @WrapOperation(
       method =
           "renderScoreboardSidebar(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/scoreboard/ScoreboardObjective;)V",
       at =
@@ -54,15 +56,16 @@ public class InGameHudMixin4 {
               target =
                   "Lnet/minecraft/client/font/TextRenderer;getWidth(Lnet/minecraft/text/StringVisitable;)I",
               ordinal = 1))
-  public int computeInt2(TextRenderer textRenderer, StringVisitable stringVisitable) {
+  public int computeInt2(
+      TextRenderer textRenderer, StringVisitable stringVisitable, Operation<Integer> original) {
     if (stringVisitable instanceof Text text) {
       try {
-        return textRenderer.getWidth(getText(text, true));
+        return original.call(textRenderer, getText(text, true));
       } catch (Exception failure) {
       }
     }
 
-    return textRenderer.getWidth(stringVisitable);
+    return original.call(textRenderer, stringVisitable);
   }
 
   @ModifyArg(
